@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Chọn gói CarRental</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">
+<style>
+/* Trang chọn gói và thanh toán chuyển khoản (docs/PAYMENT_PLAN.md mục 6). Màu, chữ theo app (Palette.swift). */
+:root {
+  --canvas: #F4F6FA; --surface: #FFFFFF; --surface-2: #EEF2F7; --surface-3: #E2E8F0;
+  --ink: #0F172A; --ink-2: #64748B; --ink-3: #94A3B8; --line: #E6EBF2;
+  --primary: #2563EB; --on-primary: #FFFFFF; --accent-2: #DBEAFE; --brand: #0F61F5;
+  --ok: #16A34A; --wait: #D97706; --bad: #DC2626;
+  --shadow: 0 1px 2px rgba(15,23,42,.04), 0 6px 20px rgba(15,23,42,.05);
+  --font: "Manrope", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --canvas: #0B1120; --surface: #111827; --surface-2: #1E293B; --surface-3: #334155;
+  --ink: #F1F5F9; --ink-2: #94A3B8; --ink-3: #64748B; --line: #1E293B;
+  --primary: #3B82F6; --accent-2: #1E3A8A; --ok: #22C55E; --wait: #F59E0B; --bad: #F87171;
+  --shadow: 0 1px 2px rgba(0,0,0,.3); color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --canvas: #0B1120; --surface: #111827; --surface-2: #1E293B; --surface-3: #334155;
+  --ink: #F1F5F9; --ink-2: #94A3B8; --ink-3: #64748B; --line: #1E293B;
+  --primary: #3B82F6; --accent-2: #1E3A8A; --ok: #22C55E; --wait: #F59E0B; --bad: #F87171;
+  --shadow: 0 1px 2px rgba(0,0,0,.3); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--canvas); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; color: inherit; }
+button { background: none; border: 0; padding: 0; cursor: pointer; }
+[hidden] { display: none !important; }
+.wrap { max-width: 560px; margin: 0 auto; padding: calc(env(safe-area-inset-top, 0px) + 20px) 16px calc(env(safe-area-inset-bottom, 0px) + 40px); }
+.brand { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+.brand svg { width: 30px; height: auto; color: var(--brand); }
+.brand b { font-size: 17px; font-weight: 700; letter-spacing: -.02em; } .brand b span { color: var(--primary); }
+h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -.02em; text-wrap: balance; }
+h2 { margin: 0 0 10px; font-size: 16px; font-weight: 600; }
+.sub { color: var(--ink-2); font-size: 14px; margin: 4px 0 0; text-wrap: pretty; }
+.card { background: var(--surface); border-radius: 18px; box-shadow: var(--shadow); padding: 18px; }
+.gap { margin-top: 16px; }
+.muted { color: var(--ink-2); } .faint { color: var(--ink-3); } .small { font-size: 13px; }
+.num { font-variant-numeric: tabular-nums; }
+.dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; background: var(--ink-3); flex: none; }
+.dot.ok { background: var(--ok); } .dot.wait { background: var(--wait); } .dot.bad { background: var(--bad); } .dot.info { background: var(--primary); }
+.st { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; color: var(--ink-2); }
+.field { display: grid; gap: 6px; margin-bottom: 14px; }
+.field label { font-size: 12.5px; color: var(--ink-2); font-weight: 600; }
+.input { height: 48px; border-radius: 14px; border: 0; box-shadow: inset 0 0 0 1.5px var(--line); background: var(--surface); padding: 0 14px; outline: none; width: 100%; font-size: 16px; }
+.input:focus { box-shadow: inset 0 0 0 1.5px var(--ink); }
+.btn { height: 50px; width: 100%; border-radius: 14px; font-weight: 600; font-size: 15.5px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--primary); color: var(--on-primary); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.line { background: var(--surface); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--surface-3); }
+.err { color: var(--bad); font-size: 13.5px; min-height: 20px; margin: 4px 0 8px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface-2); border-radius: 12px; padding: 4px; gap: 4px; }
+.seg button { height: 38px; border-radius: 9px; font-weight: 600; font-size: 14px; color: var(--ink-2); }
+.seg button.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.seg small { font-weight: 500; color: var(--ink-3); margin-left: 6px; }
+.plans { display: grid; gap: 10px; margin-top: 12px; }
+.plan { display: grid; grid-template-columns: 22px 1fr auto; column-gap: 12px; row-gap: 6px; align-items: start; text-align: left; width: 100%; padding: 16px; border-radius: 16px; background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--line); }
+.plan.on { box-shadow: inset 0 0 0 2px var(--primary); }
+.radio { width: 20px; height: 20px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--surface-3); margin-top: 2px; }
+.plan.on .radio { box-shadow: inset 0 0 0 6px var(--primary); }
+.plan b { font-size: 16px; font-weight: 600; }
+.plan .tag { display: inline-block; font-size: 11.5px; font-weight: 600; color: var(--ink-2); background: var(--surface-2); border-radius: 999px; padding: 2px 8px; margin-top: 4px; white-space: nowrap; }
+.plan .cars { display: block; font-size: 13px; font-weight: 600; color: var(--ink); margin-top: 1px; }
+.plan .price { text-align: right; font-weight: 700; font-size: 17px; white-space: nowrap; }
+.plan .price small { display: block; font-size: 12px; font-weight: 500; color: var(--ink-3); }
+.plan .desc { grid-column: 2 / 4; font-size: 13px; color: var(--ink-2); text-wrap: pretty; }
+/* Vé: khối tiền, mã QR (đường cắt đứt nét, khuyết tròn hai bên) */
+.ticket { background: var(--surface); border-radius: 18px; box-shadow: var(--shadow); }
+.tk { padding: 16px 18px; }
+.cut { position: relative; height: 0; margin: 2px 18px; border-top: 1.5px dashed color-mix(in srgb, var(--ink-3) 55%, transparent); }
+.cut::before, .cut::after { content: ""; position: absolute; top: -12px; width: 22px; height: 22px; border-radius: 50%; background: var(--canvas); }
+.cut::before { left: -30px; } .cut::after { right: -30px; }
+.kv { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 6px 0; font-size: 14px; }
+.kv > span:first-child { color: var(--ink-2); }
+.kv > span:last-child { font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.kv .note { display: block; font-size: 12.5px; color: var(--ink-3); font-weight: 500; }
+.total { font-size: 22px; font-weight: 700; }
+.qr { display: grid; place-items: center; padding: 6px 0 4px; }
+.qr img { width: min(280px, 100%); aspect-ratio: 1; border-radius: 12px; background: #fff; padding: 8px; }
+.copy { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
+.copy:first-of-type { border-top: 0; }
+.copy .l { font-size: 12.5px; color: var(--ink-2); }
+.copy .v { font-weight: 600; font-variant-numeric: tabular-nums; word-break: break-all; }
+.copy .v.code { font-size: 18px; letter-spacing: .04em; color: var(--primary); }
+.copy button { flex: none; height: 32px; padding: 0 12px; border-radius: 10px; background: var(--surface-2); font-weight: 600; font-size: 13px; }
+.steps { margin: 0; padding-left: 20px; color: var(--ink-2); font-size: 13.5px; }
+.steps li { margin: 3px 0; }
+.wait { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink-2); }
+.pulse { animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .3; } }
+.done-ic { width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; background: color-mix(in srgb, var(--ok) 14%, transparent); color: var(--ok); margin-bottom: 14px; }
+.foot { font-size: 12.5px; color: var(--ink-3); margin-top: 22px; line-height: 1.55; }
+.foot a { color: var(--ink-2); }
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); transform: translate(-50%, 20px); opacity: 0; background: var(--ink); color: var(--surface); padding: 10px 16px; border-radius: 999px; font-weight: 600; font-size: 14px; transition: .25s; pointer-events: none; max-width: calc(100% - 32px); }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><svg viewBox="21.077 10.416 193.176 157.869"  aria-hidden="true"> <path class="mk-band" d="M196.019 50.456C195.735 61.77 186.627 70.894 175.313 71.177L175.172 71.177C175.03 71.193 174.904 71.193 174.762 71.193C174.573 71.193 174.399 71.193 174.21 71.177L110.439 71.177C106.956 71.177 103.521 71.65 100.322 72.564C98.62 73.021 96.982 73.604 95.406 74.313C95.39 74.313 95.374 74.329 95.359 74.329C91.608 75.952 88.189 78.19 85.195 80.9C85.179 80.9 85.163 80.916 85.148 80.931C82.422 83.405 80.058 86.258 78.12 89.409C78.104 89.409 78.104 89.425 78.104 89.425C75.961 92.923 74.369 96.815 73.44 100.944L73.44 100.975C73.408 100.991 73.408 101.007 73.424 101.038C72.778 103.812 72.447 106.695 72.447 109.658C72.447 118.419 75.331 126.487 80.2 132.963L82.106 135.327C82.138 135.343 82.169 135.374 82.185 135.406L94.46 150.47C63.197 148.28 38.52 121.87 38.52 89.63C38.52 87.172 38.662 84.745 38.946 82.365C39.387 78.521 40.191 74.77 41.31 71.177C48.716 47.525 69.957 30.097 95.406 28.742L98.636 28.647L174.21 28.647C174.399 28.631 174.573 28.631 174.762 28.631C174.951 28.631 175.124 28.631 175.313 28.647C186.627 28.931 195.751 38.055 196.019 49.369C196.035 49.542 196.035 49.731 196.035 49.904C196.035 50.093 196.035 50.267 196.019 50.456M208.026 28.647C204.954 23.81 200.857 19.713 196.019 16.64C189.889 12.685 182.593 10.416 174.762 10.416L99.077 10.416C97.848 10.416 96.619 10.447 95.406 10.494C77.757 11.314 61.653 17.995 48.968 28.647C36.125 39.41 26.812 54.254 22.999 71.177C21.738 76.724 21.077 82.491 21.077 88.416C21.077 130.269 54.042 164.416 95.406 166.338C96.619 166.386 97.848 166.417 99.077 166.417L107.461 166.417L123.616 166.417C124.571 166.417 125.346 165.643 125.346 164.688L125.346 162.703C125.346 162.008 125.098 161.337 124.647 160.809L123.502 159.468L114.158 148.548L113.701 147.996L113.685 147.996L97.092 128.583C97.076 128.567 97.045 128.536 97.045 128.52C96.446 127.968 95.91 127.37 95.406 126.723C95.122 126.377 94.854 126.03 94.586 125.668C94.586 125.652 94.571 125.652 94.571 125.636C91.86 121.87 90.285 117.237 90.285 112.242C90.285 108.129 91.356 104.269 93.247 100.944C93.877 99.825 94.586 98.769 95.406 97.776C96.966 95.822 98.841 94.152 100.953 92.828C104.404 90.654 108.453 89.409 112.802 89.409L174.762 89.409C175.534 89.409 176.306 89.393 177.078 89.346C184.027 88.936 190.504 86.73 196.019 83.185C200.857 80.112 204.954 75.999 208.026 71.177C211.982 65.032 214.251 57.736 214.251 49.904C214.251 42.073 211.982 34.777 208.026 28.647" fill="currentColor"/> <path class="mk-leg" d="M214.253 159.958L214.253 164.91C214.253 165.743 213.578 166.419 212.745 166.419L199.057 166.419C198.437 166.419 197.834 166.216 197.339 165.841L196.021 164.843L159.794 137.393L151.6 131.2L146.116 127.04L144.761 126.016L134.519 118.263L125.348 111.314L124.422 110.61C123.844 110.17 123.504 109.485 123.504 108.758L123.504 102.395C123.504 101.594 124.153 100.945 124.953 100.945L136.786 100.945C137.482 100.945 138.16 101.173 138.715 101.594L148.338 108.887L151.6 111.361L154.074 113.236L168.445 124.125L196.021 145.004L213.336 158.113C213.914 158.551 214.253 159.233 214.253 159.958" fill="currentColor"/> <path class="mk-lane" style="--d:0" d="M107.016 110.927L114.647 118.946C114.908 119.221 114.899 119.654 114.627 119.918L113.164 121.334C112.887 121.603 112.444 121.592 112.18 121.31L104.446 113.051C104.165 112.751 104.207 112.274 104.535 112.028L106.102 110.851C106.382 110.641 106.775 110.673 107.016 110.927" fill="currentColor"/><path class="mk-lane" style="--d:1" d="M120.043 124.62L126.852 131.796C127.112 132.07 127.103 132.503 126.831 132.766L125.285 134.263C125.008 134.531 124.566 134.52 124.302 134.239L117.538 127.02C117.281 126.745 117.291 126.314 117.562 126.052L119.063 124.599C119.338 124.332 119.779 124.342 120.043 124.62" fill="currentColor"/><path class="mk-lane" style="--d:2" d="M132.797 138.037L140.018 145.631C140.279 145.905 140.27 146.339 139.998 146.602L138.341 148.206C138.064 148.474 137.621 148.463 137.358 148.182L130.191 140.536C129.933 140.261 129.943 139.831 130.214 139.569L131.817 138.017C132.093 137.75 132.533 137.759 132.797 138.037" fill="currentColor"/><path class="mk-lane" style="--d:3" d="M159.938 168.285L156.425 168.228C156.238 168.225 156.061 168.146 155.933 168.01L145.291 156.643C145.034 156.369 145.044 155.938 145.315 155.676L147.03 154.016C147.305 153.749 147.745 153.758 148.01 154.036L160.449 167.12C160.87 167.563 160.549 168.295 159.938 168.285" fill="currentColor"/> </svg><b>Car<span>Rental</span></b></div>
+  <main id="app"><p class="muted">Đang tải…</p></main>
+  <p class="foot" id="foot"></p>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+/* Kết nối: Edge Function pay-api (supabase/functions/pay-api). Mở bằng link có mã riêng (?t=…) hoặc đăng nhập như app. */
+const SB_URL = 'https://epiapzuitzwkexndmvbp.supabase.co';
+const SB_KEY = 'sb_publishable_BATsaw6NBY3k6zo9tO2pNw_uOJ0Z9gB';
+const API = SB_URL + '/functions/v1/pay-api';
+const PLANS = {
+  basic: { name: 'Cơ bản', cars: 'Tối đa 5 xe', tag: 'Phổ biến nhất', desc: 'Hồ sơ khách, chụp CCCD tự điền, hợp đồng ký trên máy, giao nhận đủ ảnh và video, đồng bộ ảnh, thu chi.' },
+  pro: { name: 'Nâng cao', cars: 'Tối đa 10 xe', desc: 'Toàn bộ tính năng của gói Cơ bản, cho đội xe vận hành thường xuyên.' },
+  fleet: { name: 'Cao cấp', cars: 'Không giới hạn xe', desc: 'Toàn bộ tính năng của gói Cơ bản, sẵn sàng mở rộng lâu dài.' },
+};
+const BANKS = { '970436': 'Vietcombank', '970407': 'Techcombank', '970422': 'MB Bank', '970416': 'ACB', '970418': 'BIDV', '970415': 'VietinBank', '970432': 'VPBank', '970423': 'TPBank', '970403': 'Sacombank', '970405': 'Agribank' };
+const ERR = {
+  link_expired: 'Link đã hết hạn hoặc không đúng. Đăng nhập để tiếp tục.', login_required: 'Đăng nhập để chọn gói.', locked: 'Tài khoản đang tạm khoá. Liên hệ hỗ trợ.',
+  bank_not_set: 'Chưa nhận thanh toán lúc này. Liên hệ hỗ trợ.', too_many_orders: 'Tạo đơn nhiều quá, thử lại sau ít phút.', bad_plan: 'Gói không hợp lệ.',
+  invalid_credentials: 'Sai thông tin đăng nhập hoặc mật khẩu.', user_banned: 'Tài khoản đang tạm khoá. Liên hệ hỗ trợ.', network: 'Không kết nối được, kiểm tra mạng rồi thử lại.',
+};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const money = n => String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + 'đ';
+const pad2 = n => String(n).padStart(2, '0');
+const D = s => s ? new Date(s) : null;
+const fDate = d => (d = D(d)) ? `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}` : '';
+const fTime = d => (d = D(d)) ? `${pad2(d.getHours())}:${pad2(d.getMinutes())}` : '';
+const noAccent = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+const ss = { get(k) { try { return JSON.parse(sessionStorage.getItem(k)); } catch { return null; } }, set(k, v) { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+
+const S = { token: new URLSearchParams(location.search).get('t'), session: ss.get('cr-pay-session'), info: null, plan: 'basic', period: 'month', quote: null, order: null, poll: null };
+const errText = e => ERR[e?.message] || e?.message || 'Có lỗi, thử lại.';
+
+async function api(action, extra = {}) {
+  const headers = { 'Content-Type': 'application/json', apikey: SB_KEY };
+  if (!S.token && S.session) headers.Authorization = `Bearer ${S.session.access_token}`;
+  let r;
+  try { r = await fetch(API, { method: 'POST', headers, body: JSON.stringify({ action, t: S.token || undefined, ...extra }) }); }
+  catch { throw new Error('network'); }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || `Lỗi ${r.status}`);
+  return j;
+}
+
+/* ---------- đăng nhập (cùng tài khoản app: email hoặc số điện thoại + mật khẩu) ---------- */
+function loginEmail(v) {
+  v = v.trim().toLowerCase();
+  if (/[a-z@]/.test(v)) return v;
+  let d = v.replace(/\D/g, '');
+  if (d.startsWith('0')) d = '84' + d.slice(1);
+  return `${d}@phone.example.com`;
+}
+function showLogin(msg) {
+  stopPoll();
+  $('#app').innerHTML = `<h1>Chọn gói</h1><p class="sub">Đăng nhập bằng tài khoản CarRental để xem và đăng ký gói.</p>
+    <form class="card gap" id="login" autocomplete="on">
+      <div class="field"><label for="lg-id">Email hoặc số điện thoại</label><input class="input" id="lg-id" autocomplete="username" required></div>
+      <div class="field"><label for="lg-pw">Mật khẩu</label><input class="input" id="lg-pw" type="password" autocomplete="current-password" required></div>
+      <div class="err" id="lg-err">${esc(msg || '')}</div>
+      <button class="btn" id="lg-btn" type="submit">Đăng nhập</button>
+      <p class="small faint" style="margin:12px 0 0">Quên mật khẩu: dùng "Quên mật khẩu" trong app CarRental.</p>
+    </form>`;
+  $('#login').addEventListener('submit', async e => {
+    e.preventDefault();
+    const b = $('#lg-btn'); b.disabled = true; b.textContent = 'Đang đăng nhập…'; $('#lg-err').textContent = '';
+    try {
+      const r = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, { method: 'POST', headers: { apikey: SB_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail($('#lg-id').value), password: $('#lg-pw').value }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error_code || 'invalid_credentials');
+      S.session = { access_token: j.access_token }; ss.set('cr-pay-session', S.session); S.token = null;
+      await start();
+    } catch (err) { $('#lg-err').textContent = errText(err); b.disabled = false; b.textContent = 'Đăng nhập'; }
+  });
+}
+
+/* ---------- chọn gói ---------- */
+const price = (plan, period) => S.info.prices.find(p => p.plan === plan && p.period === period)?.amount ?? 0;
+function statusLine() {
+  const i = S.info, now = Date.now();
+  if (i.plan !== 'free' && D(i.paid_until) > now) return `<span class="st"><i class="dot ok"></i>Gói ${PLANS[i.plan]?.name || ''} đến ${fDate(i.paid_until)}${i.next_plan ? `, sau đó gói ${PLANS[i.next_plan]?.name} đến ${fDate(i.next_until)}` : ''}</span>`;
+  if (i.plan !== 'free' && D(i.trial_end) > now) return `<span class="st"><i class="dot wait"></i>Đang dùng thử gói ${PLANS[i.plan]?.name || ''} đến ${fDate(i.trial_end)}</span>`;
+  return `<span class="st"><i class="dot"></i>Đang dùng gói Miễn phí (tối đa 2 xe)</span>`;
+}
+function showChoose() {
+  stopPoll();
+  const i = S.info, saved = m => Math.round(100 - price('basic', 'year') / (price('basic', 'month') * 12) * 100);
+  $('#app').innerHTML = `<h1>${i.name ? `Chào ${esc(i.name)}` : 'Chọn gói'}</h1><p class="sub">${statusLine()}</p>
+    <div class="card gap">
+      <div class="seg" role="tablist" aria-label="Kỳ hạn"><button data-period="month" class="${S.period === 'month' ? 'on' : ''}">Theo tháng</button><button data-period="year" class="${S.period === 'year' ? 'on' : ''}">Theo năm${saved() > 0 ? `<small>bớt ${saved()}%</small>` : ''}</button></div>
+      <div class="plans">${Object.entries(PLANS).map(([k, p]) => `<button class="plan ${S.plan === k ? 'on' : ''}" data-plan="${k}" aria-pressed="${S.plan === k}">
+        <span class="radio"></span><span><b>${p.name}</b><span class="cars">${p.cars}</span>${p.tag ? `<span class="tag">${p.tag}</span>` : ''}</span>
+        <span class="price num">${money(price(k, S.period))}<small>mỗi ${S.period === 'year' ? 'năm' : 'tháng'}</small></span>
+        <span class="desc">${p.desc}</span></button>`).join('')}</div>
+    </div>
+    <div class="ticket gap" id="quote"><div class="tk"><p class="muted small" style="margin:0">Đang tính…</p></div></div>
+    <div class="err" id="q-err"></div>
+    <button class="btn" id="pay" disabled>Thanh toán</button>`;
+  $('#app').querySelectorAll('[data-period]').forEach(b => b.onclick = () => { S.period = b.dataset.period; showChoose(); });
+  $('#app').querySelectorAll('[data-plan]').forEach(b => b.onclick = () => { S.plan = b.dataset.plan; showChoose(); });
+  $('#pay').onclick = createOrder;
+  loadQuote();
+}
+async function loadQuote() {
+  const key = S.plan + S.period;
+  try {
+    const q = await api('quote', { plan: S.plan, period: S.period });
+    if (key !== S.plan + S.period) return;
+    S.quote = q;
+    const note = { upgrade: q.bonus_days > 0 ? `Đã cộng ${q.bonus_days} ngày đổi từ phần còn lại của gói đang dùng.` : 'Nâng gói có hiệu lực ngay.',
+      extend: 'Gia hạn sớm không mất ngày: nối tiếp sau hạn hiện tại.', queue: 'Bắt đầu sau khi gói đang dùng hết hạn.',
+      new: D(S.info.trial_end) > Date.now() && S.info.plan !== 'free' ? 'Đổi sang gói này ngay; thời gian trả tiền tính sau ngày hết dùng thử.' : 'Kích hoạt ngay khi nhận tiền.' }[q.mode] || '';
+    $('#quote').innerHTML = `<div class="tk">
+        <div class="kv"><span>Gói</span><span>${PLANS[q.plan].name} · ${q.period === 'year' ? '1 năm' : '1 tháng'}</span></div>
+        <div class="kv"><span>Dùng từ</span><span>${fDate(q.starts_at)}</span></div>
+        <div class="kv"><span>Đến hết</span><span>${fDate(q.ends_at)}</span></div>
+        <p class="small muted" style="margin:6px 0 0">${note}</p></div>
+      <div class="cut"></div>
+      <div class="tk"><div class="kv"><span>Số tiền</span><span class="total">${money(q.amount)}</span></div></div>`;
+    $('#pay').disabled = false; $('#pay').textContent = `Thanh toán ${money(q.amount)}`;
+  } catch (e) { if (handleAuth(e)) return; $('#q-err').textContent = errText(e); }
+}
+async function createOrder() {
+  const b = $('#pay'); b.disabled = true; b.textContent = 'Đang tạo đơn…'; $('#q-err').textContent = '';
+  try { S.order = await api('order', { plan: S.plan, period: S.period }); showPay(); }
+  catch (e) { if (handleAuth(e)) return; $('#q-err').textContent = errText(e); b.disabled = false; b.textContent = `Thanh toán ${money(S.quote?.amount)}`; }
+}
+
+/* ---------- chuyển khoản ---------- */
+function qrUrl(amount) {
+  const b = S.order.bank;
+  return `https://img.vietqr.io/image/${b.bin}-${b.account}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(S.order.code)}${b.holder ? `&accountName=${encodeURIComponent(noAccent(b.holder))}` : ''}`;
+}
+function showPay(status) {
+  const o = S.order, b = o.bank, missing = status && status.status === 'partial' ? o.amount - status.paid_amount : o.amount;
+  const row = (l, v, copy, cls = '') => `<div class="copy"><div style="min-width:0"><div class="l">${l}</div><div class="v ${cls}">${esc(v)}</div></div>${copy ? `<button data-copy="${esc(copy)}">Chép</button>` : ''}</div>`;
+  $('#app').innerHTML = `<h1>Chuyển khoản</h1><p class="sub">Gói ${PLANS[o.plan].name} · ${o.period === 'year' ? '1 năm' : '1 tháng'}. Gói kích hoạt ngay khi nhận tiền.</p>
+    <div class="ticket gap">
+      <div class="tk qr"><img src="${qrUrl(missing)}" alt="Mã QR chuyển khoản ${money(missing)}, nội dung ${esc(o.code)}" width="280" height="280"></div>
+      <div class="cut"></div>
+      <div class="tk">
+        ${row('Ngân hàng', BANKS[b.bin] || b.bin)}
+        ${row('Số tài khoản', b.account, b.account)}
+        ${b.holder ? row('Chủ tài khoản', b.holder) : ''}
+        ${row(status?.status === 'partial' ? 'Số tiền còn thiếu' : 'Số tiền', money(missing), String(missing))}
+        ${row('Nội dung chuyển khoản (ghi đúng mã này)', o.code, o.code, 'code')}
+      </div>
+    </div>
+    <div class="card gap">
+      <div class="wait" id="wait"><i class="dot wait pulse"></i><span>${status?.status === 'partial' ? `Đã nhận ${money(status.paid_amount)}, còn thiếu ${money(missing)}` : 'Đang chờ chuyển khoản…'}</span></div>
+      <ol class="steps" style="margin-top:12px">
+        <li>Trên điện thoại này: nhấn giữ mã QR, chọn Lưu vào Ảnh. Mở app ngân hàng, chọn Quét QR rồi chọn ảnh vừa lưu.</li>
+        <li>Hoặc chép số tài khoản, số tiền, nội dung rồi dán vào app ngân hàng.</li>
+        <li>Giữ trang này mở: có tiền là trang tự báo, thường trong vài giây.</li>
+      </ol>
+      <p class="small faint" style="margin:10px 0 0">Đơn giữ đến ${fTime(o.expires_at)} ${fDate(o.expires_at)}. Chuyển sau giờ đó vẫn được ghi nhận trong 7 ngày.</p>
+    </div>
+    <button class="btn line gap" id="back">Chọn gói khác</button>`;
+  $('#app').querySelectorAll('[data-copy]').forEach(x => x.onclick = () => copy(x.dataset.copy));
+  $('#back').onclick = () => { S.order = null; showChoose(); };
+  startPoll();
+}
+function startPoll() {
+  stopPoll();
+  S.poll = setInterval(async () => {
+    if (document.hidden || !S.order) return;
+    try {
+      const s = await api('status', { code: S.order.code });
+      if (s.status === 'paid') return showDone(s);
+      if (s.status === 'partial' && s.paid_amount !== S.lastPaid) { S.lastPaid = s.paid_amount; showPay(s); }
+    } catch {}
+  }, 3000);
+}
+function stopPoll() { if (S.poll) clearInterval(S.poll); S.poll = null; }
+function showDone(s) {
+  stopPoll();
+  const until = s.next_until || s.paid_until;
+  $('#app').innerHTML = `<div class="card"><div class="done-ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></div>
+    <h1>Đã kích hoạt gói ${PLANS[s.plan].name}</h1>
+    <p class="sub">Đã nhận ${money(s.paid_amount)} cho đơn ${esc(s.code)}. Gói dùng đến ${fDate(s.paid_until)}${s.next_plan ? `, sau đó gói ${PLANS[s.next_plan]?.name} đến ${fDate(s.next_until)}` : ''}.</p>
+    <p class="sub" style="margin-top:12px">Mở lại app CarRental để dùng. Thư xác nhận đã gửi vào email của bạn.</p></div>`;
+}
+
+/* ---------- chung ---------- */
+let toastT;
+function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200); }
+async function copy(v) { try { await navigator.clipboard.writeText(v); toast('Đã chép'); } catch { toast(v); } }
+function handleAuth(e) {
+  if (e.message === 'link_expired' || e.message === 'login_required' || e.message === 'Lỗi 401') { S.token = null; S.session = null; ss.set('cr-pay-session', null); showLogin(errText(e)); return true; }
+  return false;
+}
+async function start() {
+  $('#app').innerHTML = '<p class="muted">Đang tải…</p>';
+  try {
+    S.info = await api('info');
+    const support = S.info.bank?.support || 'carrental.hotro@gmail.com';
+    $('#foot').innerHTML = `Thanh toán bằng chuyển khoản ngân hàng. Cần hỗ trợ hoặc hoàn tiền: <a href="mailto:${esc(support)}">${esc(support)}</a>. Chưa hỗ trợ xuất hoá đơn. <a href="../terms.html">Điều khoản</a> · <a href="../privacy.html">Chính sách bảo mật</a>`;
+    if (S.info.locked) return ($('#app').innerHTML = `<div class="card"><h1>Tài khoản đang tạm khoá</h1><p class="sub">Liên hệ ${esc(support)} để được hỗ trợ.</p></div>`);
+    const pre = S.info.preset || {}, last = S.info.last || {};
+    S.plan = PLANS[pre.plan] ? pre.plan : PLANS[last.plan] ? last.plan : PLANS[S.info.plan] ? S.info.plan : 'basic';
+    S.period = pre.period === 'year' || (!pre.period && last.period === 'year') ? 'year' : 'month';
+    if (pre.code) {
+      const s = await api('status', { code: pre.code }).catch(() => null);
+      if (s && s.status === 'paid') return showDone(s);
+      if (s && (s.status === 'partial' || s.status === 'pending')) {
+        S.order = { code: s.code, plan: s.plan, period: s.period, amount: s.amount, expires_at: s.expires_at, bank: S.info.bank };
+        return showPay(s.status === 'partial' ? s : undefined);
+      }
+    }
+    showChoose();
+  } catch (e) { if (handleAuth(e)) return; $('#app').innerHTML = `<div class="card"><p>${esc(errText(e))}</p><button class="btn line gap" onclick="start()">Thử lại</button></div>`; }
+}
+if (S.token || S.session) start(); else showLogin();
+</script>
+</body>
+</html>
