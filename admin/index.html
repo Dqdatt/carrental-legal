@@ -339,6 +339,7 @@ const ERR = {
   otp_expired: 'Mã chưa đúng hoặc đã hết hạn', invalid_otp: 'Mã chưa đúng hoặc đã hết hạn', over_email_send_rate_limit: 'Gửi mã quá nhiều lần, thử lại sau ít phút',
   over_request_rate_limit: 'Thử quá nhiều lần, chờ ít phút', weak_password: 'Mật khẩu cần ít nhất 8 ký tự, có chữ và số', email_address_invalid: 'Email chưa đúng',
   validation_failed: 'Thông tin chưa đúng', bad_email: 'Email chưa đúng', already_admin: 'Email này đã là quản trị viên', cannot_remove_self: 'Không tự gỡ quyền của mình được',
+  otp_disabled: 'Email này chưa có tài khoản. Chưa có thì bấm Tạo tài khoản quản trị.', user_not_found: 'Email này chưa có tài khoản.',
   not_invited: 'Email này chưa được mời làm quản trị viên. Nhờ một quản trị viên mời ở trang Hệ thống.',
 };
 class ApiError extends Error {}
@@ -379,7 +380,7 @@ async function rpc(name, params = {}) {
 }
 function signOutLocal() { session = null; store.set('cr-admin-session', null); showLogin(); }
 async function signOut() {
-  if (session && !DEMO) fetch(`${SB_URL}/auth/v1/logout`, { method: 'POST', headers: { apikey: SB_KEY, Authorization: `Bearer ${session.access_token}` } }).catch(() => {});
+  if (session && !DEMO) fetch(`${SB_URL}/auth/v1/logout?scope=local`, { method: 'POST', headers: { apikey: SB_KEY, Authorization: `Bearer ${session.access_token}` } }).catch(() => {});
   signOutLocal();
 }
 
@@ -1014,8 +1015,9 @@ function eyeify(root = document) {
 
 /* ============ Đăng nhập, tạo tài khoản quản trị ============
    Tạo tài khoản: email → mã 6 số qua email (Supabase Auth, như app) → đặt mật khẩu → nhận quyền (admin_claim)
-   nếu email nằm trong danh sách mời. Email đã có tài khoản app: các bước như "quên mật khẩu", mật khẩu được đặt lại. */
-const AUTH = { mode: 'login', email: '', resendAt: 0, msg: '', ok: false };
+   nếu email nằm trong danh sách mời. Email đã có tài khoản app: các bước như "quên mật khẩu", mật khẩu được đặt lại.
+   Quên mật khẩu (flow 'forgot'): như trên nhưng không tạo tài khoản mới (create_user: false). */
+const AUTH = { mode: 'login', flow: 'signup', email: '', resendAt: 0, msg: '', ok: false };
 function authHTML() {
   const err = `<div class="login-err" id="lg-err" role="alert" ${AUTH.ok ? 'style="color:var(--s-avail)"' : ''}>${esc(AUTH.msg)}</div>`;
   const alt = (q, k, l) => `<p class="login-alt">${q} <button class="link" type="button" data-auth="${k}">${l}</button></p>`;
@@ -1023,23 +1025,28 @@ function authHTML() {
     case 'email': return `<h1>Tạo tài khoản quản trị</h1><p class="muted" style="margin:4px 0 18px;font-size:13.5px">Chỉ email đã được mời mới nhận quyền quản trị. Mã 6 số sẽ gửi tới email này.</p>
       <form class="form" id="auth-form"><div class="field"><label for="lg-email">Email</label><input id="lg-email" class="input" type="email" autocomplete="username" value="${esc(AUTH.email)}" required></div>
       ${err}<button class="btn primary" id="lg-btn" type="submit" style="height:44px">Gửi mã</button></form>${alt('Đã có tài khoản?', 'login', 'Đăng nhập')}`;
+    case 'forgot': return `<h1>Quên mật khẩu</h1><p class="muted" style="margin:4px 0 18px;font-size:13.5px">Nhập email quản trị viên, mã 6 số sẽ gửi tới email này để đặt mật khẩu mới.</p>
+      <form class="form" id="auth-form"><div class="field"><label for="lg-email">Email</label><input id="lg-email" class="input" type="email" autocomplete="username" value="${esc(AUTH.email)}" required></div>
+      ${err}<button class="btn primary" id="lg-btn" type="submit" style="height:44px">Gửi mã</button></form>${alt('Nhớ ra mật khẩu?', 'login', 'Đăng nhập')}`;
     case 'code': return `<h1>Nhập mã</h1><p class="muted" style="margin:4px 0 18px;font-size:13.5px">Mã 6 số vừa gửi tới <b style="color:var(--ink)">${esc(AUTH.email)}</b>, dùng được 15 phút. Không thấy thì xem mục Thư rác.</p>
       <form class="form" id="auth-form"><div class="field"><label for="lg-code">Mã xác thực</label><input id="lg-code" class="input num" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required style="letter-spacing:.3em;font-size:18px;font-weight:600"></div>
       ${err}<button class="btn primary" id="lg-btn" type="submit" style="height:44px">Xác nhận</button></form>
-      <p class="login-alt"><button class="link" type="button" data-auth="resend" id="resend"></button> · <button class="link" type="button" data-auth="email">Đổi email</button></p>`;
-    case 'password': return `<h1>Đặt mật khẩu</h1><p class="muted" style="margin:4px 0 18px;font-size:13.5px">Mật khẩu để đăng nhập trang quản trị lần sau: ít nhất 8 ký tự, có chữ và số.</p>
+      <p class="login-alt"><button class="link" type="button" data-auth="resend" id="resend"></button> · <button class="link" type="button" data-auth="${AUTH.flow === 'forgot' ? 'forgot' : 'email'}">Đổi email</button></p>`;
+    case 'password': return `<h1>${AUTH.flow === 'forgot' ? 'Mật khẩu mới' : 'Đặt mật khẩu'}</h1><p class="muted" style="margin:4px 0 18px;font-size:13.5px">Mật khẩu để đăng nhập trang quản trị lần sau: ít nhất 8 ký tự, có chữ và số.</p>
       <form class="form" id="auth-form"><div class="field"><label for="lg-pass">Mật khẩu</label><input id="lg-pass" class="input" type="password" autocomplete="new-password" required></div>
       <div class="field"><label for="lg-pass2">Nhập lại mật khẩu</label><input id="lg-pass2" class="input" type="password" autocomplete="new-password" required></div>
       ${err}<button class="btn primary" id="lg-btn" type="submit" style="height:44px">Hoàn tất</button></form>`;
     default: return `<h1>Đăng nhập</h1><p class="muted" style="margin:4px 0 18px;font-size:13.5px">Chỉ tài khoản quản trị viên đăng nhập được.</p>
       <form class="form" id="auth-form" autocomplete="on"><div class="field"><label for="lg-email">Email</label><input id="lg-email" class="input" type="email" autocomplete="username" value="${esc(AUTH.email)}" required></div>
       <div class="field"><label for="lg-pass">Mật khẩu</label><input id="lg-pass" class="input" type="password" autocomplete="current-password" required></div>
-      ${err}<button class="btn primary" id="lg-btn" type="submit" style="height:44px">Đăng nhập</button></form>${alt('Chưa có tài khoản?', 'email', 'Tạo tài khoản quản trị')}`;
+      ${err}<button class="btn primary" id="lg-btn" type="submit" style="height:44px">Đăng nhập</button></form>
+      <p class="login-alt"><button class="link" type="button" data-auth="forgot">Quên mật khẩu?</button></p>${alt('Chưa có tài khoản?', 'email', 'Tạo tài khoản quản trị')}`;
   }
 }
 let resendT;
 function renderAuth(mode, msg, ok = false) {
   if (mode) AUTH.mode = mode;
+  if (mode === 'forgot' || mode === 'email') AUTH.flow = mode === 'forgot' ? 'forgot' : 'signup';
   AUTH.msg = msg || ''; AUTH.ok = ok;
   $('#auth-body').innerHTML = authHTML();
   eyeify($('#auth-body'));
@@ -1057,7 +1064,7 @@ function showLogin(msg) {
   renderAuth('login', msg);
 }
 async function sendCode() {
-  await authFetch('otp', 'POST', { email: AUTH.email, create_user: true });
+  await authFetch('otp', 'POST', { email: AUTH.email, create_user: AUTH.flow !== 'forgot' });
   AUTH.resendAt = Date.now() + 60e3;
 }
 async function submitAuth(e) {
@@ -1069,7 +1076,7 @@ async function submitAuth(e) {
       await authCall('password', { email: AUTH.email, password: $('#lg-pass').value });
       return await enter();
     }
-    if (AUTH.mode === 'email') {
+    if (AUTH.mode === 'email' || AUTH.mode === 'forgot') {
       AUTH.email = $('#lg-email').value.trim().toLowerCase();
       await sendCode();
       return renderAuth('code');
@@ -1084,6 +1091,7 @@ async function submitAuth(e) {
       if (p.length < 8 || !/[a-zA-Z]/.test(p) || !/\d/.test(p)) throw new ApiError('weak_password');
       try { await authFetch('user', 'PUT', { password: p }, await token()); }
       catch (err) { if (err.message !== 'same_password') throw err; }
+      if (AUTH.flow === 'forgot') toast('Đã đặt mật khẩu mới');
       return await enter();
     }
   } catch (err) {
