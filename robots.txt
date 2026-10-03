@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /tai-khoan/
+Disallow: /goi/
+
+Sitemap: https://carrental.id.vn/sitemap.xml
