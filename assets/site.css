@@ -154,6 +154,12 @@ h1, h2, h3 { margin: 0; letter-spacing: -.02em; text-wrap: balance; }
 .hero-shots .p2 { left: 0; top: 48px; width: 214px; transform: rotate(-3deg); z-index: 2; }
 .hero-shots .p3 { right: 0; top: 48px; width: 214px; transform: rotate(3deg); z-index: 2; }
 .hero-shots .float { position: absolute; right: 0; bottom: 18px; width: 230px; z-index: 4; box-shadow: var(--shadow-lg), 0 0 0 1px var(--line); }
+
+/* Video giới thiệu: bản ngang cho màn rộng, bản dọc cho điện thoại */
+.film video { display: block; width: 100%; height: auto; border-radius: 24px; background: #0B1220; box-shadow: var(--shadow-lg), 0 0 0 1px var(--line); }
+.film-wide { max-width: 1040px; margin: 0 auto; aspect-ratio: 16 / 9; }
+.film-tall { display: none !important; max-width: 400px; margin: 0 auto; aspect-ratio: 9 / 16; }
+@media (max-width: 719px) { .film-wide { display: none !important; } .film-tall { display: block !important; } }
 @media (max-width: 560px) {
   .hero-shots { height: 470px; }
   .hero-shots .p1 { width: 206px; } .hero-shots .p2, .hero-shots .p3 { width: 172px; }
