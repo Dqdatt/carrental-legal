@@ -156,46 +156,17 @@ h1, h2, h3 { margin: 0; letter-spacing: -.02em; text-wrap: balance; }
 .hero-shots .float { position: absolute; right: 0; bottom: 18px; width: 230px; z-index: 4; box-shadow: var(--shadow-lg), 0 0 0 1px var(--line); }
 
 /* Video giới thiệu: bản ngang cho màn rộng, bản dọc cho điện thoại */
-.film video { display: block; width: 100%; height: auto; border-radius: 24px; background: #0B1220; box-shadow: var(--shadow-lg), 0 0 0 1px var(--line); }
-.film-wide { max-width: 1040px; margin: 0 auto; aspect-ratio: 16 / 9; }
-.film-tall { display: none !important; max-width: 400px; margin: 0 auto; aspect-ratio: 9 / 16; }
-@media (max-width: 719px) { .film-wide { display: none !important; } .film-tall { display: block !important; } }
-@media (max-width: 560px) {
-  .hero-shots { height: 470px; }
-  .hero-shots .p1 { width: 206px; } .hero-shots .p2, .hero-shots .p3 { width: 172px; }
-  .hero-shots .p2 { left: -10%; } .hero-shots .p3 { right: -10%; }
-  .hero-shots .float { right: 4px; bottom: 0; width: 200px; }
-}
-/* Khung iPhone: viền 9px, bo 44px, đảo động ở trên */
-.phone { width: 240px; border-radius: 44px; padding: 9px; background: var(--bezel); box-shadow: var(--shadow-lg); flex: none; }
-.phone .scr { border-radius: 35px; overflow: hidden; aspect-ratio: 393 / 852; background: var(--canvas); position: relative; }
-.phone .scr::before { content: ""; position: absolute; top: 9px; left: 50%; transform: translateX(-50%); width: 34%; height: 3.2%; border-radius: 99px; background: #000; z-index: 2; }
-.phone img { width: 100%; height: 100%; object-fit: cover; }
-.phone .d { display: none; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .phone .d { display: block; } :root:not([data-theme="light"]) .phone .l { display: none; } }
-:root[data-theme="dark"] .phone .d { display: block; }
-:root[data-theme="dark"] .phone .l { display: none; }
-/* Chương: số 01–06 xanh nhỏ, tiêu đề, câu chính, 2 dòng phụ; ảnh và chữ đổi bên xen kẽ */
-.chapters { display: grid; gap: 72px; }
-@media (min-width: 1024px) { .chapters { gap: 96px; } }
-.chapter { display: grid; gap: 28px; align-items: center; }
-@media (min-width: 1024px) { .chapter { grid-template-columns: 1fr 1fr; gap: 32px; } .chapter.flip > .media { order: 2; } }
-.chapter .media { display: flex; justify-content: center; }
-.ch-n { display: block; font-size: 13px; font-weight: 600; letter-spacing: .04em; color: var(--primary); font-variant-numeric: tabular-nums; }
-.chapter h3 { margin-top: 4px; }
-.ch-main { margin: 16px 0 0; font-size: 16px; color: var(--ink); line-height: 1.6; }
-.ch-sub { margin: 8px 0 0; font-size: 14.5px; color: var(--ink-2); line-height: 1.55; }
-.chapter .copy { max-width: 460px; }
-/* Thẻ nhỏ cạnh ảnh doanh thu */
-.minis { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px; }
-.mini { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); padding: 14px 16px; }
-.mini span { display: block; font-size: 12.5px; color: var(--ink-2); }
-.mini b { display: block; font-size: 15px; font-weight: 600; margin-top: 2px; }
-.band { background: #2563EB; color: #fff; border-radius: 28px; padding: 40px 24px; display: grid; gap: 22px; align-items: center; }
-@media (min-width: 900px) { .band { grid-template-columns: 1fr auto; padding: 56px; } }
-.band h2 { color: #fff; }
-.band p { color: rgba(255,255,255,.82); margin: 10px 0 0; max-width: 560px; }
-.band .cta { display: flex; flex-wrap: wrap; gap: 10px; }
+.film-box { position: relative; margin: 0 auto; }
+.film-box video { display: block; width: 100%; height: auto; border-radius: 24px; background: #0B1220; box-shadow: var(--shadow-lg), 0 0 0 1px var(--line); }
+.film-wide { max-width: 1040px; }
+.film-wide video { aspect-ratio: 16 / 9; }
+.film-tall { display: none; max-width: 400px; }
+.film-tall video { aspect-ratio: 9 / 16; }
+@media (max-width: 719px) { .film-wide { display: none; } .film-tall { display: block; } }
+.film-sound { position: absolute; top: 14px; right: 14px; display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px 0 12px; border: 0; border-radius: 999px; background: rgba(11,18,32,.62); color: #fff; font-family: inherit; font-size: 13px; font-weight: 600; line-height: 1; cursor: pointer; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.film-sound[hidden] { display: none; }
+.film-sound svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.film-sound:hover { background: rgba(11,18,32,.78); }
 
 /* ---------- bảng giá (bản Stitch: nút ngay dưới giá, tính năng ở dưới nút) ---------- */
 .seg { display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--surface-2); border-radius: 14px; padding: 4px; gap: 4px; }

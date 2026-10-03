@@ -152,6 +152,27 @@ function loadPrices() {
 
 /* Theo tháng / theo năm trên thẻ gói (Trang chủ, Bảng giá): đổi số trên thẻ và kỳ hạn mang sang trang Chọn gói */
 function setPeriod(p) {
+  // Video giới thiệu: lướt tới (thấy từ một nửa) thì tự phát không tiếng, lướt qua thì dừng.
+  // Trình duyệt chỉ cho tự phát khi tắt tiếng nên có nút "Bật tiếng". Bản đang ẩn (theo cỡ màn) không bao giờ thấy nên không tải.
+  // Người xem tự dừng hoặc đã xem hết thì không tự phát lại; máy đặt giảm chuyển động thì không tự phát.
+  $$('.film-box').forEach(box => {
+    const v = $('video', box), btn = $('.film-sound', box);
+    let userPaused = false, autoPause = false;
+    const sync = () => { btn.hidden = !v.muted || (v.paused && !v.currentTime); };
+    btn.addEventListener('click', () => { v.muted = false; v.volume = 1; if (v.paused) v.play().catch(() => {}); });
+    v.addEventListener('volumechange', sync);
+    v.addEventListener('play', () => { userPaused = false; sync(); });
+    v.addEventListener('pause', () => { if (autoPause) autoPause = false; else userPaused = true; sync(); });
+    if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && v.preload === 'none') v.preload = 'auto'; }), { rootMargin: '400px 0px' }).observe(box);
+    new IntersectionObserver(es => es.forEach(e => {
+      if (e.isIntersecting) {
+        if (!v.paused || userPaused || v.ended) return;
+        if (!v.currentTime) { v.muted = true; v.setAttribute('muted', ''); }
+        v.play().catch(() => {});
+      } else if (!v.paused) { autoPause = true; v.pause(); }
+    }), { threshold: 0.5 }).observe(box);
+  });
   $$('.seg [data-period]').forEach(b => { const on = b.dataset.period === p; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
   $$('[data-period-month]').forEach(el => el.hidden = p !== 'month');
   $$('[data-period-year]').forEach(el => el.hidden = p !== 'year');
@@ -176,6 +197,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
     $$('.reveal').forEach(el => io.observe(el));
   } else $$('.reveal').forEach(el => el.classList.add('in'));
+  // Video giới thiệu: lướt tới (thấy từ một nửa) thì tự phát không tiếng, lướt qua thì dừng.
+  // Trình duyệt chỉ cho tự phát khi tắt tiếng nên có nút "Bật tiếng". Bản đang ẩn (theo cỡ màn) không bao giờ thấy nên không tải.
+  // Người xem tự dừng hoặc đã xem hết thì không tự phát lại; máy đặt giảm chuyển động thì không tự phát.
+  $$('.film-box').forEach(box => {
+    const v = $('video', box), btn = $('.film-sound', box);
+    let userPaused = false, autoPause = false;
+    const sync = () => { btn.hidden = !v.muted || (v.paused && !v.currentTime); };
+    btn.addEventListener('click', () => { v.muted = false; v.volume = 1; if (v.paused) v.play().catch(() => {}); });
+    v.addEventListener('volumechange', sync);
+    v.addEventListener('play', () => { userPaused = false; sync(); });
+    v.addEventListener('pause', () => { if (autoPause) autoPause = false; else userPaused = true; sync(); });
+    if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && v.preload === 'none') v.preload = 'auto'; }), { rootMargin: '400px 0px' }).observe(box);
+    new IntersectionObserver(es => es.forEach(e => {
+      if (e.isIntersecting) {
+        if (!v.paused || userPaused || v.ended) return;
+        if (!v.currentTime) { v.muted = true; v.setAttribute('muted', ''); }
+        v.play().catch(() => {});
+      } else if (!v.paused) { autoPause = true; v.pause(); }
+    }), { threshold: 0.5 }).observe(box);
+  });
   $$('.seg [data-period]').forEach(b => b.addEventListener('click', () => setPeriod(b.dataset.period)));
   if ($('[data-price]')) loadPrices().then(list => {
     // Phần trăm bớt khi trả theo năm, theo giá thật của gói Cơ bản
