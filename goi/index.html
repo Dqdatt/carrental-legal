@@ -93,7 +93,7 @@ h2 { margin: 0 0 10px; font-size: 16px; font-weight: 600; }
 .kv .note { display: block; font-size: 12.5px; color: var(--ink-3); font-weight: 500; }
 .total { font-size: 22px; font-weight: 700; }
 .qr { display: grid; place-items: center; padding: 6px 0 4px; }
-.qr img { width: min(280px, 100%); aspect-ratio: 1; border-radius: 12px; background: #fff; padding: 8px; }
+.qr img { width: min(280px, 100%); aspect-ratio: 1; border-radius: 12px; background: #fff; padding: 8px; cursor: pointer; }
 .copy { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
 .copy:first-of-type { border-top: 0; }
 .copy .l { font-size: 12.5px; color: var(--ink-2); }
@@ -270,7 +270,8 @@ function showPay(status) {
   const row = (l, v, copy, cls = '') => `<div class="copy"><div style="min-width:0"><div class="l">${l}</div><div class="v ${cls}">${esc(v)}</div></div>${copy ? `<button data-copy="${esc(copy)}">Chép</button>` : ''}</div>`;
   $('#app').innerHTML = `<h1>Chuyển khoản</h1><p class="sub">Gói ${PLANS[o.plan].name} · ${o.period === 'year' ? '1 năm' : '1 tháng'}. Gói kích hoạt ngay khi nhận tiền.</p>
     <div class="ticket gap">
-      <div class="tk qr"><img src="${qrUrl(missing)}" alt="Mã QR chuyển khoản ${money(missing)}, nội dung ${esc(o.code)}" width="280" height="280"></div>
+      <div class="tk qr"><img src="${qrUrl(missing)}" alt="Mã QR chuyển khoản ${money(missing)}, nội dung ${esc(o.code)}" width="280" height="280">
+        <button class="btn line" id="save-qr" type="button" style="height:42px;width:auto;padding:0 18px;margin-top:10px">Tải mã QR</button></div>
       <div class="cut"></div>
       <div class="tk">
         ${row('Ngân hàng', BANKS[b.bin] || b.bin)}
@@ -283,7 +284,7 @@ function showPay(status) {
     <div class="card gap">
       <div class="wait" id="wait"><i class="dot wait pulse"></i><span>${status?.status === 'partial' ? `Đã nhận ${money(status.paid_amount)}, còn thiếu ${money(missing)}` : 'Đang chờ chuyển khoản…'}</span></div>
       <ol class="steps" style="margin-top:12px">
-        <li>Trên điện thoại này: nhấn giữ mã QR, chọn Lưu vào Ảnh. Mở app ngân hàng, chọn Quét QR rồi chọn ảnh vừa lưu.</li>
+        <li>Trên điện thoại này: bấm Tải mã QR, chọn Lưu hình ảnh. Mở app ngân hàng, chọn Quét QR rồi chọn ảnh vừa lưu.</li>
         <li>Hoặc chép số tài khoản, số tiền, nội dung rồi dán vào app ngân hàng.</li>
         <li>Giữ trang này mở: có tiền là trang tự báo, thường trong vài giây.</li>
       </ol>
@@ -291,8 +292,29 @@ function showPay(status) {
     </div>
     <button class="btn line gap" id="back">Chọn gói khác</button>`;
   $('#app').querySelectorAll('[data-copy]').forEach(x => x.onclick = () => copy(x.dataset.copy));
+  prepareQR(qrUrl(missing));
+  $('#save-qr').onclick = saveQR;
+  $('.qr img').onclick = saveQR;
   $('#back').onclick = () => { S.order = null; showChoose(); };
   startPoll();
+}
+/* Tải mã QR: lấy ảnh sẵn khi màn chuyển khoản hiện ra (iPhone chỉ mở bảng chia sẻ ngay trong lúc bấm, không chờ tải được).
+   iPhone, Android: bảng chia sẻ (Lưu hình ảnh vào app Ảnh); máy tính: tải tệp ảnh. */
+function prepareQR(url) {
+  S.qrFile = null;
+  const name = `CarRental-${S.order.code}.png`;
+  S.qrReady = fetch(url).then(r => r.ok ? r.blob() : Promise.reject(r.status))
+    .then(b => (S.qrFile = new File([b], name, { type: 'image/png' }))).catch(() => null);
+}
+async function saveQR() {
+  const f = S.qrFile || await S.qrReady;
+  if (!f) return toast('Chưa tải được mã QR, chụp màn hình mã QR thay thế');
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f] }); return; }
+  } catch (e) { if (e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = f.name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  toast('Đã tải mã QR');
 }
 function startPoll() {
   stopPoll();
