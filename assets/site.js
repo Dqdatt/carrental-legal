@@ -150,6 +150,14 @@ function loadPrices() {
   })();
 }
 
+/* Theo tháng / theo năm trên thẻ gói (Trang chủ, Bảng giá): đổi số trên thẻ và kỳ hạn mang sang trang Chọn gói */
+function setPeriod(p) {
+  $$('.seg [data-period]').forEach(b => { const on = b.dataset.period === p; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+  $$('[data-period-month]').forEach(el => el.hidden = p !== 'month');
+  $$('[data-period-year]').forEach(el => el.hidden = p !== 'year');
+  $$('[data-goi]').forEach(a => a.href = `${CFG.root}goi/?plan=${a.dataset.goi}&period=${p}`);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   paintTheme();
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintTheme);
@@ -168,5 +176,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
     $$('.reveal').forEach(el => io.observe(el));
   } else $$('.reveal').forEach(el => el.classList.add('in'));
-  if ($('[data-price]')) loadPrices();
+  $$('.seg [data-period]').forEach(b => b.addEventListener('click', () => setPeriod(b.dataset.period)));
+  if ($('[data-price]')) loadPrices().then(list => {
+    // Phần trăm bớt khi trả theo năm, theo giá thật của gói Cơ bản
+    const m = list?.find(x => x.plan === 'basic' && x.period === 'month')?.amount, y = list?.find(x => x.plan === 'basic' && x.period === 'year')?.amount;
+    if (m && y) $$('.seg [data-period="year"] small').forEach(el => { const v = Math.round(100 - y / (m * 12) * 100); el.textContent = v > 0 ? `bớt ${v}%` : ''; });
+  });
 });
