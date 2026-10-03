@@ -312,7 +312,10 @@ function showDone(s) {
   $('#app').innerHTML = `<div class="card"><div class="done-ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></div>
     <h1>Đã kích hoạt gói ${PLANS[s.plan].name}</h1>
     <p class="sub">Đã nhận ${money(s.paid_amount)} cho đơn ${esc(s.code)}. Gói dùng đến ${fDate(s.paid_until)}${s.next_plan ? `, sau đó gói ${PLANS[s.next_plan]?.name} đến ${fDate(s.next_until)}` : ''}.</p>
-    <p class="sub" style="margin-top:12px">Mở lại app CarRental để dùng. Thư xác nhận đã gửi vào email của bạn.</p></div>`;
+    <p class="sub" style="margin-top:12px">Thư xác nhận đã gửi vào email của bạn.</p>
+    <a class="btn gap" href="carrental://activated" style="text-decoration:none">Mở app CarRental</a></div>`;
+  // Trên điện thoại: mở app ngay (iPhone hỏi "Mở trong CarRental?"); app tải lại và hiện popup "Đã kích hoạt gói …"
+  if (/iPhone|iPad|Android/i.test(navigator.userAgent)) setTimeout(() => { location.href = 'carrental://activated'; }, 900);
 }
 
 /* ---------- chung ---------- */
