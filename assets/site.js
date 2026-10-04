@@ -207,6 +207,42 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (!v.paused) { autoPause = true; v.pause(); }
     }), { threshold: 0.5 }).observe(box);
   });
+  // Trang chủ theo trang trên màn cảm ứng: mỗi lần vuốt dọc cuộn tới mục kế (.pg); mục cao hơn màn thì cuộn từng phần,
+  // hết mục cuối thì xuống chân trang. Vuốt ngang để nguyên (bảng giá lướt ngang, thanh tua video).
+  // Chuột, bàn di trên máy tính dùng scroll-snap trong CSS, không qua đây.
+  const pages = $$('.paged .pg');
+  if (pages.length) {
+    const HDR = 72, docTop = el => el.getBoundingClientRect().top + scrollY;
+    const smooth = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+    let x0 = 0, y0 = 0, goal = null, until = 0;
+    const stops = () => {
+      const vis = innerHeight - HDR - ($('.dock')?.offsetHeight || 0), out = [0, document.documentElement.scrollHeight - innerHeight];
+      for (const pg of pages) {
+        const top = docTop(pg), h = pg.offsetHeight;
+        out.push(top - HDR);
+        if (h > vis + 60) { for (let y = top + vis * .85; y < top + h - vis; y += vis * .85) out.push(y - HDR); out.push(top + h - vis - HDR); }
+      }
+      return { vis, all: out.map(v => Math.max(0, Math.round(v))).sort((a, b) => a - b) };
+    };
+    const skip = e => !matchMedia('(pointer: coarse)').matches || e.target.closest?.('.menu');
+    addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+    // Chặn cuộn dọc tự do (trình duyệt không theo touch-action), vuốt ngang để nguyên
+    addEventListener('touchmove', e => {
+      if (skip(e) || e.touches.length > 1) return;
+      const t = e.touches[0];
+      if (Math.abs(t.clientY - y0) > Math.abs(t.clientX - x0) && e.cancelable) e.preventDefault();
+    }, { passive: false });
+    addEventListener('touchend', e => {
+      if (skip(e)) return;
+      const t = e.changedTouches[0], dy = y0 - t.clientY, dx = x0 - t.clientX;
+      if (Math.abs(dy) < 24 || Math.abs(dx) > Math.abs(dy)) return;
+      const { vis, all } = stops(), cur = goal !== null && Date.now() < until ? goal : scrollY;
+      let to = dy > 0 ? all.find(v => v > cur + 8) : all.filter(v => v < cur - 8).pop();
+      if (to === undefined) to = cur + Math.sign(dy) * vis * .8;
+      goal = Math.max(0, to); until = Date.now() + 700;
+      scrollTo({ top: goal, behavior: smooth });
+    }, { passive: true });
+  }
   $$('.seg [data-period]').forEach(b => b.addEventListener('click', () => setPeriod(b.dataset.period)));
   if ($('[data-price]')) loadPrices().then(list => {
     // Phần trăm bớt khi trả theo năm, theo giá thật của gói Cơ bản
