@@ -24,7 +24,7 @@ const ERR = {
   otp_expired: 'Mã không đúng hoặc đã hết hạn.', over_email_send_rate_limit: 'Gửi mã nhiều quá, chờ một phút rồi thử lại.',
   otp_disabled: 'Email này chưa có tài khoản CarRental.', user_not_found: 'Email này chưa có tài khoản CarRental.',
   weak_password: 'Mật khẩu từ 8 ký tự, có cả chữ và số.', same_password: 'Mật khẩu mới phải khác mật khẩu cũ.',
-  bad_phone: 'Số điện thoại chưa đúng.', bad_email: 'Email chưa đúng.', need_contact: 'Nhập số điện thoại hoặc email để được liên hệ lại.',
+  bad_phone: 'Số điện thoại chưa đúng.', bad_email: 'Email chưa đúng.', need_contact: 'Vui lòng nhập số điện thoại hoặc email để CarRental có thể liên hệ lại.',
   too_many: 'Đang có nhiều yêu cầu, thử lại sau ít phút.', too_many_messages: 'Gửi nhiều quá, thử lại sau ít phút.',
   empty_message: 'Nhập nội dung.', not_found: 'Không tìm thấy tài khoản chủ xe.',
 };
@@ -152,27 +152,6 @@ function loadPrices() {
 
 /* Theo tháng / theo năm trên thẻ gói (Trang chủ, Bảng giá): đổi số trên thẻ và kỳ hạn mang sang trang Chọn gói */
 function setPeriod(p) {
-  // Video giới thiệu: lướt tới (thấy từ một nửa) thì tự phát không tiếng, lướt qua thì dừng.
-  // Trình duyệt chỉ cho tự phát khi tắt tiếng nên có nút "Bật tiếng". Bản đang ẩn (theo cỡ màn) không bao giờ thấy nên không tải.
-  // Người xem tự dừng hoặc đã xem hết thì không tự phát lại; máy đặt giảm chuyển động thì không tự phát.
-  $$('.film-box').forEach(box => {
-    const v = $('video', box), btn = $('.film-sound', box);
-    let userPaused = false, autoPause = false;
-    const sync = () => { btn.hidden = !v.muted || (v.paused && !v.currentTime); };
-    btn.addEventListener('click', () => { v.muted = false; v.volume = 1; if (v.paused) v.play().catch(() => {}); });
-    v.addEventListener('volumechange', sync);
-    v.addEventListener('play', () => { userPaused = false; sync(); });
-    v.addEventListener('pause', () => { if (autoPause) autoPause = false; else userPaused = true; sync(); });
-    if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && v.preload === 'none') v.preload = 'auto'; }), { rootMargin: '400px 0px' }).observe(box);
-    new IntersectionObserver(es => es.forEach(e => {
-      if (e.isIntersecting) {
-        if (!v.paused || userPaused || v.ended) return;
-        if (!v.currentTime) { v.muted = true; v.setAttribute('muted', ''); }
-        v.play().catch(() => {});
-      } else if (!v.paused) { autoPause = true; v.pause(); }
-    }), { threshold: 0.5 }).observe(box);
-  });
   $$('.seg [data-period]').forEach(b => { const on = b.dataset.period === p; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
   $$('[data-period-month]').forEach(el => el.hidden = p !== 'month');
   $$('[data-period-year]').forEach(el => el.hidden = p !== 'year');
@@ -197,24 +176,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
     $$('.reveal').forEach(el => io.observe(el));
   } else $$('.reveal').forEach(el => el.classList.add('in'));
-  // Video giới thiệu: lướt tới (thấy từ một nửa) thì tự phát không tiếng, lướt qua thì dừng.
-  // Trình duyệt chỉ cho tự phát khi tắt tiếng nên có nút "Bật tiếng". Bản đang ẩn (theo cỡ màn) không bao giờ thấy nên không tải.
-  // Người xem tự dừng hoặc đã xem hết thì không tự phát lại; máy đặt giảm chuyển động thì không tự phát.
+  // Video giới thiệu: lướt tới (thấy từ một nửa) thì tự phát có tiếng và lặp lại, lướt qua thì dừng.
+  // Trình duyệt chặn phát có tiếng khi người xem chưa chạm vào trang: khi đó phát không tiếng, hiện nút "Bật tiếng",
+  // và lần chạm, bấm phím đầu tiên ở bất kỳ đâu trên trang sẽ bật tiếng. Người xem tự dừng hay tự tắt tiếng thì tôn trọng.
+  // Bản đang ẩn (theo cỡ màn) không bao giờ thấy nên không tải; máy đặt giảm chuyển động thì không tự phát.
   $$('.film-box').forEach(box => {
     const v = $('video', box), btn = $('.film-sound', box);
-    let userPaused = false, autoPause = false;
+    // want: trạng thái tắt tiếng do trang đặt; khác đi là người xem tự đổi trên thanh điều khiển
+    let userPaused = false, autoPause = false, autoMuted = false, want = false;
     const sync = () => { btn.hidden = !v.muted || (v.paused && !v.currentTime); };
-    btn.addEventListener('click', () => { v.muted = false; v.volume = 1; if (v.paused) v.play().catch(() => {}); });
-    v.addEventListener('volumechange', sync);
+    const mute = m => { want = m; v.muted = m; };
+    const unmute = () => { autoMuted = false; mute(false); v.volume = 1; if (v.paused) v.play().catch(() => {}); };
+    btn.addEventListener('click', unmute);
+    v.addEventListener('volumechange', () => { if (v.muted !== want) { autoMuted = false; want = v.muted; } sync(); });
     v.addEventListener('play', () => { userPaused = false; sync(); });
     v.addEventListener('pause', () => { if (autoPause) autoPause = false; else userPaused = true; sync(); });
+    // Lần chạm đầu tiên trên trang: video đang phát không tiếng do trình duyệt chặn thì bật tiếng
+    const gesture = e => { if (autoMuted && !v.paused && !box.contains(e.target)) unmute(); };
+    ['pointerdown', 'keydown', 'touchend'].forEach(t => addEventListener(t, gesture, { passive: true }));
     if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && v.preload === 'none') v.preload = 'auto'; }), { rootMargin: '400px 0px' }).observe(box);
     new IntersectionObserver(es => es.forEach(e => {
       if (e.isIntersecting) {
-        if (!v.paused || userPaused || v.ended) return;
-        if (!v.currentTime) { v.muted = true; v.setAttribute('muted', ''); }
-        v.play().catch(() => {});
+        if (!v.paused || userPaused) return;
+        v.play().catch(err => {
+          if (err.name !== 'NotAllowedError') return;
+          autoMuted = true; mute(true);
+          v.play().catch(() => {});
+        });
       } else if (!v.paused) { autoPause = true; v.pause(); }
     }), { threshold: 0.5 }).observe(box);
   });
